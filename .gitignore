@@ -1,0 +1,35 @@
+# ---- C/C++ 编译产物（不该进仓库）----
+*.o
+*.obj
+*.exe
+*.out
+*.dll
+*.a
+*.lib
+*.pdb
+*.ilk
+*.exp
+
+# ---- 构建目录 ----
+build/
+out/
+bin/
+Debug/
+Release/
+cmake-build-*/
+
+# ---- IDE ----
+.vscode/
+.idea/
+*.code-workspace
+*.user
+
+# ---- 系统 ----
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# ---- 大文件 ----
+*.mp4
+*.zip
+*.7z
