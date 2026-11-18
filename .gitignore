@@ -19,7 +19,9 @@ Release/
 cmake-build-*/
 
 # ---- IDE ----
-.vscode/
+.vscode/*
+!.vscode/tasks.json
+!.vscode/settings.json
 .idea/
 *.code-workspace
 *.user
