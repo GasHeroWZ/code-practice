@@ -25,6 +25,9 @@ cmake-build-*/
 !.vscode/tasks.json
 !.vscode/settings.json
 !.vscode/launch.json
+!**/.vscode/tasks.json
+!**/.vscode/launch.json
+!**/.vscode/settings.json
 .idea/
 *.code-workspace
 *.user
