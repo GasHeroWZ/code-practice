@@ -8,16 +8,18 @@
  */
 int Gcd(int a, int b)
 {
-    /* TODO */
-    (void)a; (void)b;
-    return 0;
+   int t;
+   while(b!=0)
+   t=b;
+   b=a%b;
+   a=t; 
+   
+    return a;
 }
 
 int Lcm(int a, int b)
 {
-    /* TODO: 用上面 Gcd 的结果, 别重新实现一遍 */
-    (void)a; (void)b;
-    return 0;
+    return a*b/Gcd(int a,int b);
 }
 
 int main(void)
