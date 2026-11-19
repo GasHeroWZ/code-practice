@@ -3,6 +3,8 @@
 *.obj
 *.exe
 *.out
+# 判题用的期望输出必须进仓库（否则克隆下来判题器无法工作）
+!00-roadmap/**/case*.out
 *.dll
 *.a
 *.lib
