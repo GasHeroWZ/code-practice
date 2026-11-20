@@ -77,7 +77,7 @@ function Build-Problem {
 # ---------- 收集题目 ----------
 $all = @()
 foreach ($s in (Get-ChildItem $root -Directory | Where-Object { $_.Name -match '^stage\d+$' } | Sort-Object Name)) {
-  foreach ($p in (Get-ChildItem $s.FullName -Directory | Sort-Object Name)) {
+  foreach ($p in (Get-ChildItem $s.FullName -Directory | Where-Object { -not $_.Name.StartsWith(".") -and (Test-Path (Join-Path $_.FullName "main.c")) } | Sort-Object Name)) {
     $all += [pscustomobject]@{ Stage = $s.Name; Dir = $p }
   }
 }
