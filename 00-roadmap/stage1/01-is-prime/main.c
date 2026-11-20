@@ -7,7 +7,7 @@
  */
 int IsPrime(int n)
 {
-    /* TODO: 在这里实现 */
+   
   
    
     if (n<=1)

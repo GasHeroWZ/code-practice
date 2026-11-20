@@ -8,10 +8,14 @@
  */
 void Swap(int* pa, int* pb)
 {
-    /* TODO */
-    (void)pa; (void)pb;
+    int a;int b;
+  
+ 
+  int c=0;
+  c=*pa;
+  *pa=*pb;
+    *pb=c;
 }
-
 int main(void)
 {
     int a = 0, b = 0;
