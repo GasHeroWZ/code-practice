@@ -15,9 +15,8 @@ void Stats(int a[], int n, int* max, int* min, double* avg)
     if (a[i]>*max)
     *max=a[i];
     *avg=*avg+a[i];
-    
-
    }
+   *avg=*avg/n;
 }
 
 int main(void)

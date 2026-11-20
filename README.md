@@ -26,9 +26,13 @@ code-practice/
 |---|---|---|---|
 | stage1 | 01-is-prime | ✅ PASS 6/6 | 边界：1 不是素数、2 是素数 |
 | stage1 | 02-gcd-lcm | ✅ PASS 3/3 | 踩坑：while 缺花括号导致死循环 |
-| stage1 | 03-array-stats | ⬜ 待做 | 需要指针带回多结果，等学完指针 |
+| stage1 | 03-array-stats | ✅ PASS 2/2 | 踩坑：忘了除以 n，只有总和 |
 | stage1 | 04-table | ✅ PASS 2/2 | 踩坑：换行位置、乘数顺序 |
-| stage2 | 05-16 | ⬜ 未开始 | |
+| **stage1 小结** | **4/4 全部通过** | ✅ | 2026-11-20 完成 |
+| stage2 | 05-swap | ✅ PASS 3/3 | 指针入门，一次通过 |
+| stage2 | 06-max-by-pointer | ⬜ 进行中 | |
+| stage2 | 07-count-bits | ⬜ 待做 | |
+| stage3-5 | 09-16 | ⬜ 未开始 | |
 
 ## 怎么判题
 

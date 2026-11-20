@@ -98,7 +98,12 @@ if ($List) {
 
 $sel = $all
 if ($Stage)   { $sel = @($sel | Where-Object { $_.Stage -eq "stage$Stage" }) }
-if ($Problem) { $sel = @($sel | Where-Object { $_.Dir.Name -like "*$Problem*" }) }
+if ($Problem) {
+  $sel = @($sel | Where-Object { $_.Dir.Name -like "*$Problem*" })
+  # 如果关键字正好等于某个题目全名，就只判那一题
+  $exact = @($sel | Where-Object { $_.Dir.Name -eq $Problem })
+  if ($exact.Count -eq 1) { $sel = $exact }
+}
 if ($sel.Count -eq 0) {
   Write-Host ""
   Write-Host "  ✗ 没找到题目，关键字是 '$Problem'" -ForegroundColor Red
@@ -110,6 +115,10 @@ if ($sel.Count -eq 0) {
 $what = if ($Problem) { "关键字 '$Problem'" } elseif ($Stage) { "阶段 $Stage" } else { "全部题目" }
 Write-Host ""
 Write-Host ("  ===== 本次判题: {0}，共 {1} 题 =====" -f $what, $sel.Count) -ForegroundColor Cyan
+if ($Problem -and $sel.Count -gt 1) {
+  Write-Host ("  提示: '{0}' 同时命中了这些题 —— {1}" -f $Problem, (($sel | ForEach-Object { $_.Dir.Name }) -join '、')) -ForegroundColor Yellow
+  Write-Host "        只判其中一题，用更精确的关键字，例如 -Problem 03 或 -Problem stats" -ForegroundColor DarkGray
+}
 Write-Host ""
 
 # ---------- -Run ----------
