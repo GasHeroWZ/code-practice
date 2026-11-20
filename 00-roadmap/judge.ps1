@@ -1,15 +1,17 @@
 ﻿<#
-  judge.ps1 - C 语言通关练习判题器（v3）
+  judge.ps1 - C 语言通关练习判题器（v4）
 
   用法:
     .\judge.ps1 -List                  看有哪些题
     .\judge.ps1 -Problem table         判题（对错都给结果）
     .\judge.ps1 -Problem table -Run    编译后自己运行，手动输入
 
-  说明:
-    - 判哪道题由 -Problem 决定，不会"记住上次"
-    - 每题编译到独立临时文件，不会被残留进程占用
-    - 每个用例最多等 5 秒，程序死循环会被判定超时并终止
+  可靠性说明:
+    - 每次编译使用唯一临时文件名（含时间戳），可在同一终端里反复判题，
+      不需要关闭终端
+    - 编译失败遇到文件占用会自动换名重试
+    - 会显示 main.c 的最后修改时间，便于确认判的是不是你刚保存的版本
+    - 每个用例最多等 5 秒，死循环会被判定超时并终止
 #>
 param(
   [int]$Stage,
@@ -21,13 +23,13 @@ param(
 $ErrorActionPreference = 'Continue'
 $root  = $PSScriptRoot
 $gcc   = 'D:\mingw64\bin\gcc.exe'
-$exe   = "_j$PID.exe"
+$runId = Get-Date -Format 'HHmmssfff'
 
+# 清理历史临时文件
 Get-ChildItem $root -Recurse -Filter '_j*.exe' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
 
 if (-not (Test-Path $gcc)) { Write-Host "找不到 gcc: $gcc" -ForegroundColor Red; exit 1 }
 
-# 带超时地运行程序，把输入文件喂给它
 function Invoke-Program {
   param([string]$ExePath, [string]$InFile, [int]$TimeoutMs)
   $psi = New-Object System.Diagnostics.ProcessStartInfo
@@ -53,6 +55,25 @@ function Invoke-Program {
   }
 }
 
+# 编译到临时文件，占用时自动换名重试
+function Build-Problem {
+  param([string]$Dir, [string]$Tag)
+  $src = Join-Path $Dir 'main.c'
+  $lastErr = @()
+  for ($i = 1; $i -le 3; $i++) {
+    $name = "_j${PID}_${Tag}_${i}_$($script:runId).exe"
+    $out  = Join-Path $Dir $name
+    Remove-Item $out -Force -ErrorAction SilentlyContinue
+    $log = & $gcc 'main.c' -o $name -Wall 2>&1
+    if ($LASTEXITCODE -eq 0 -and (Test-Path $out)) {
+      return [pscustomobject]@{ Ok = $true; Exe = $out; Name = $name; Log = $log }
+    }
+    $lastErr = $log
+    Start-Sleep -Milliseconds 400
+  }
+  return [pscustomobject]@{ Ok = $false; Exe = $null; Name = $null; Log = $lastErr }
+}
+
 # ---------- 收集题目 ----------
 $all = @()
 foreach ($s in (Get-ChildItem $root -Directory | Where-Object { $_.Name -match '^stage\d+$' } | Sort-Object Name)) {
@@ -64,7 +85,11 @@ foreach ($s in (Get-ChildItem $root -Directory | Where-Object { $_.Name -match '
 if ($List) {
   Write-Host ""
   Write-Host "  ===== 全部题目 =====" -ForegroundColor Cyan
-  foreach ($x in $all) { Write-Host ("   {0,-8} {1}" -f $x.Stage, $x.Dir.Name) }
+  foreach ($x in $all) {
+    $src = Join-Path $x.Dir.FullName 'main.c'
+    $mt = if (Test-Path $src) { (Get-Item $src).LastWriteTime.ToString('MM-dd HH:mm') } else { '--' }
+    Write-Host ("   {0,-8} {1,-24} 最后修改 {2}" -f $x.Stage, $x.Dir.Name, $mt)
+  }
   Write-Host ""
   Write-Host "  判题: .\judge.ps1 -Problem <名字里的一段>" -ForegroundColor DarkGray
   Write-Host ""
@@ -91,19 +116,17 @@ Write-Host ""
 if ($Run) {
   foreach ($x in $sel) {
     Push-Location $x.Dir.FullName
-    Remove-Item $exe -Force -ErrorAction SilentlyContinue
-    Write-Host ("  编译 " + $x.Dir.Name + " ...") -ForegroundColor DarkGray
-    $build = & $gcc 'main.c' -o $exe -Wall 2>&1
-    if ($LASTEXITCODE -ne 0) {
+    $b = Build-Problem -Dir $x.Dir.FullName -Tag 'run'
+    if (-not $b.Ok) {
       Write-Host "  [编译失败] 先改掉这些错误：" -ForegroundColor Red
-      $build | Select-Object -First 8 | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
+      $b.Log | Select-Object -First 8 | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
       Pop-Location; continue
     }
     Write-Host ("  --- 运行 " + $x.Dir.Name + "（输入数据后回车，Ctrl+C 退出）---") -ForegroundColor Green
     Write-Host ""
-    & ".\$exe"
+    & $b.Exe
     Write-Host ""
-    Remove-Item $exe -Force -ErrorAction SilentlyContinue
+    Remove-Item $b.Exe -Force -ErrorAction SilentlyContinue
     Pop-Location
   }
   exit 0
@@ -116,23 +139,24 @@ foreach ($x in $sel) {
   if ($x.Stage -ne $curStage) { $curStage = $x.Stage; Write-Host "  --- $curStage ---" -ForegroundColor DarkCyan }
   $p = $x.Dir
   Push-Location $p.FullName
-  Remove-Item $exe -Force -ErrorAction SilentlyContinue
 
-  $build = & $gcc 'main.c' -o $exe -Wall 2>&1
-  if ($LASTEXITCODE -ne 0) {
-    Write-Host ("  [编译失败] " + $p.Name) -ForegroundColor Red
-    $build | Select-Object -First 4 | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
+  $src = Join-Path $p.FullName 'main.c'
+  $mt  = (Get-Item $src).LastWriteTime.ToString('MM-dd HH:mm:ss')
+
+  $b = Build-Problem -Dir $p.FullName -Tag 'c'
+  if (-not $b.Ok) {
+    Write-Host ("  [编译失败] " + $p.Name + "   （源码最后修改 $mt）") -ForegroundColor Red
+    $b.Log | Select-Object -First 4 | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
     $fail++; $failed += ("{0}(编译失败)" -f $p.Name)
     Pop-Location; continue
   }
 
   $cases = @(Get-ChildItem $p.FullName -Filter '*.in' | Sort-Object Name)
   $ok = 0; $rows = @()
-  $exePath = Join-Path $p.FullName $exe
   foreach ($c in $cases) {
     $expFile = [System.IO.Path]::ChangeExtension($c.FullName, '.out')
     if (-not (Test-Path $expFile)) { continue }
-    $r = Invoke-Program -ExePath $exePath -InFile $c.FullName -TimeoutMs ($TimeoutSec * 1000)
+    $r = Invoke-Program -ExePath $b.Exe -InFile $c.FullName -TimeoutMs ($TimeoutSec * 1000)
     $expect = (Get-Content -LiteralPath $expFile -Encoding UTF8 | Out-String)
     $clean = { param($t) (($t -replace "`r", '') -split "`n" | ForEach-Object { $_.TrimEnd() }) -join "`n" }
     $a = ((& $clean $r.Text).Trim()); $e = ((& $clean $expect).Trim())
@@ -145,19 +169,19 @@ foreach ($x in $sel) {
   }
 
   if ($ok -eq $cases.Count -and $cases.Count -gt 0) {
-    Write-Host ("  [PASS] " + $p.Name + "  ($ok/$($cases.Count))") -ForegroundColor Green
+    Write-Host ("  [PASS] " + $p.Name + "  ($ok/$($cases.Count))   源码 $mt") -ForegroundColor Green
     foreach ($r in $rows) {
       Write-Host ("      输入 {0}  →  你的程序输出:" -f $r.In) -ForegroundColor DarkGray
       ($r.Actual -split "`n") | Select-Object -First 4 | ForEach-Object { Write-Host ("          " + $_) -ForegroundColor Gray }
     }
     $pass++
   } else {
-    Write-Host ("  [FAIL] " + $p.Name + "  ($ok/$($cases.Count))") -ForegroundColor Red
+    Write-Host ("  [FAIL] " + $p.Name + "  ($ok/$($cases.Count))   源码 $mt") -ForegroundColor Red
     foreach ($r in ($rows | Where-Object { -not $_.Same })) {
       Write-Host ("      输入 {0}" -f $r.In) -ForegroundColor DarkGray
       if ($r.TimedOut) {
         Write-Host ("      问题: 程序没有正常结束（死循环）") -ForegroundColor Yellow
-        Write-Host ("      提示: 检查 while/for 后面有没有加 { }，循环体是否只有一行") -ForegroundColor DarkGray
+        Write-Host ("      提示: 检查 while/for 后面有没有加 { }") -ForegroundColor DarkGray
       } else {
         Write-Host ("      期望: " + ($r.Expect -replace "`n", ' | ')) -ForegroundColor DarkGray
         Write-Host ("      实际: " + ($r.Actual -replace "`n", ' | ')) -ForegroundColor Yellow
@@ -165,7 +189,7 @@ foreach ($x in $sel) {
     }
     $fail++; $failed += $p.Name
   }
-  Remove-Item $exe -Force -ErrorAction SilentlyContinue
+  Remove-Item $b.Exe -Force -ErrorAction SilentlyContinue
   Pop-Location
 }
 

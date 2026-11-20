@@ -8,8 +8,16 @@
  */
 void Stats(int a[], int n, int* max, int* min, double* avg)
 {
-    /* TODO */
-    (void)a; (void)n; (void)max; (void)min; (void)avg;
+   *min=a[0],*max=a[0],*avg=0;
+   for(int i=0;i<n;i++){
+    if (a[i]<*min)
+    *min=a[i];
+    if (a[i]>*max)
+    *max=a[i];
+    *avg=*avg+a[i];
+    
+
+   }
 }
 
 int main(void)
