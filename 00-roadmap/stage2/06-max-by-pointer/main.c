@@ -8,11 +8,14 @@
  */
 int MaxByPointer(int* p, int n, int* index)
 {
-    int max=p[0];*index=0;
-for (int i=0;i<n;i++){
-    if (p[i]>max){
-    max=p[i];
-    *index=i;}
+    int*q=p;
+    int max=*q;*index=0;
+    for(int i=1;i<n;i++){
+        q++;
+        if(*q>max){
+            max=*q;
+            *index=i;
+        }
 }
     return max;
 }

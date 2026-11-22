@@ -30,8 +30,8 @@ code-practice/
 | stage1 | 04-table | ✅ PASS 2/2 | 踩坑：换行位置、乘数顺序 |
 | **stage1 小结** | **4/4 全部通过** | ✅ | 2026-11-20 完成 |
 | stage2 | 05-swap | ✅ PASS 3/3 | 指针入门，一次通过 |
-| stage2 | 06-max-by-pointer | ⬜ 进行中 | |
-| stage2 | 07-count-bits | ⬜ 待做 | |
+| stage2 | 06-max-by-pointer | ✅ PASS 2/2 | 踩坑：`index=0` 少了星号，空指针崩溃 |
+| stage2 | 07-count-bits | ⬜ 待做 | 位运算 x & (x-1) |
 | stage3-5 | 09-16 | ⬜ 未开始 | |
 
 ## 怎么判题
