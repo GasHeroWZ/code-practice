@@ -8,9 +8,13 @@
  */
 int MaxByPointer(int* p, int n, int* index)
 {
-    /* TODO: 找到最大值写入 *index 并返回 */
-    (void)p; (void)n; (void)index;
-    return 0;
+    int max=p[0];*index=0;
+for (int i=0;i<n;i++){
+    if (p[i]>max){
+    max=p[i];
+    *index=i;}
+}
+    return max;
 }
 
 int main(void)
